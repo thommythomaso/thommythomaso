@@ -1,0 +1,32 @@
+name: contributions
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render contribution chart
+        env:
+          GH_TOKEN: ${{ secrets.GH_STATS_TOKEN || github.token }}
+          GH_USER: ${{ github.repository_owner }}
+        run: python3 scripts/contributions.py
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- assets/contributions.svg; then
+            echo "no change"
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Update contribution chart' -- assets/contributions.svg
+          git push
